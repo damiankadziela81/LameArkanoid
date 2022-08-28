@@ -2,13 +2,11 @@ package org.example;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.Random;
 
-public class GamePanel extends JPanel implements ActionListener {
+public class GamePanel extends JPanel implements Runnable {
 
     private final int GAME_WIDTH = 600;
     private final int GAME_HEIGHT = 500;
@@ -21,8 +19,7 @@ public class GamePanel extends JPanel implements ActionListener {
     private int yBall = (GAME_HEIGHT - ballDiameter)/2;
     private int dxBall = 2;
     private int dyBall = -2;
-    private Timer timer;
-
+    Thread gameThread;
     private Random brickGenerator = new Random();
     private int brickColumns = brickGenerator.nextInt(5) + 4;
     private int brickRows = brickGenerator.nextInt(5) + 4;
@@ -36,14 +33,15 @@ public class GamePanel extends JPanel implements ActionListener {
     private boolean isBrickHit[][] = new boolean[brickColumns][brickRows];
     private String gameState = "runs";
     private boolean enableCheat = false;
+    private int paddleVelocity;
 
     public GamePanel() {
         this.setBackground(Color.BLACK);
         setPreferredSize(new Dimension(GAME_WIDTH, GAME_HEIGHT));
 
         spawnBricks();
-        timer = new Timer(10, this);
-        timer.start();
+        gameThread = new Thread(this);
+        gameThread.start();
         addKeyListener(new PaddleControl());
         setFocusable(true);
     }
@@ -51,11 +49,13 @@ public class GamePanel extends JPanel implements ActionListener {
     public class PaddleControl extends KeyAdapter {
         @Override
         public void keyPressed(KeyEvent e) {
-            if(e.getKeyCode() == KeyEvent.VK_LEFT && xPaddle > 0) {
-                xPaddle = xPaddle - 10;
+            if(e.getKeyCode() == KeyEvent.VK_LEFT) {
+                setPaddleMoveDirection(-5);
+                movePaddle();
             }
-            if(e.getKeyCode() == KeyEvent.VK_RIGHT && xPaddle < (GAME_WIDTH - paddleWidth)) {
-                xPaddle = xPaddle + 10;
+            if(e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                setPaddleMoveDirection(5);
+                movePaddle();
             }
             if(!gameState.equals("runs") && e.getKeyCode() == KeyEvent.VK_SPACE) {
                 resetGame();
@@ -65,6 +65,29 @@ public class GamePanel extends JPanel implements ActionListener {
                 System.out.println("CHEAT ENABLED!");
             }
         }
+
+        public void keyReleased(KeyEvent e) {
+            if(e.getKeyCode() == KeyEvent.VK_LEFT) {
+                setPaddleMoveDirection(0);
+                movePaddle();
+            }
+            if(e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                setPaddleMoveDirection(0);
+                movePaddle();
+            }
+        }
+    }
+
+    public void setPaddleMoveDirection(int velocity){
+        paddleVelocity = velocity;
+    }
+    public void movePaddle(){
+        xPaddle = xPaddle + paddleVelocity;
+    }
+
+    public void checkPaddleCollision() {
+        if(xPaddle < 0) xPaddle = 0;
+        if(xPaddle > (GAME_WIDTH - paddleWidth)) xPaddle = GAME_WIDTH - paddleWidth;
     }
 
     @Override
@@ -174,14 +197,28 @@ public class GamePanel extends JPanel implements ActionListener {
         gameState = "runs";
     }
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if(enableCheat) {
-            xPaddle = xBall - paddleWidth / 2;
+    public void run(){
+        //game loop
+        long lastTime = System.nanoTime();
+        double amountOffTicks = 60.0;
+        double ns = 1000000000 / amountOffTicks;
+        double delta = 0;
+        while(true){
+            long now = System.nanoTime();
+            delta += (now - lastTime) / ns;
+            lastTime = now;
+            if(delta >= 1){
+                if(enableCheat) {
+                    xPaddle = xBall - paddleWidth / 2;
+                }
+                checkGameState();
+                checkPaddleCollision();
+                movePaddle();
+                collisionWithBricks();
+                ballMovement();
+                repaint();
+                delta--;
+            }
         }
-        checkGameState();
-        collisionWithBricks();
-        ballMovement();
-        repaint();
     }
 }
