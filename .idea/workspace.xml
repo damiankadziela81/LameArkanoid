@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a9b8b822-cf6c-49e0-a2c9-e4d004d16a9e" name="Changes" comment="Init commit, still plenty to do...">
+    <list default="true" id="a9b8b822-cf6c-49e0-a2c9-e4d004d16a9e" name="Changes" comment="Basic functionality working, game loop complete.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/org/example/GamePanel.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/example/GamePanel.java" afterDir="false" />
     </list>
@@ -75,7 +75,14 @@
       <option name="project" value="LOCAL" />
       <updated>1661690460544</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Basic functionality working, game loop complete.">
+      <created>1661695646137</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1661695646137</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -91,6 +98,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Init commit, still plenty to do..." />
-    <option name="LAST_COMMIT_MESSAGE" value="Init commit, still plenty to do..." />
+    <MESSAGE value="Basic functionality working, game loop complete." />
+    <option name="LAST_COMMIT_MESSAGE" value="Basic functionality working, game loop complete." />
   </component>
 </project>

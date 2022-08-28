@@ -16,7 +16,7 @@ public class GamePanel extends JPanel implements ActionListener {
     private int paddleHeight = 10;
     private int xPaddle = (GAME_WIDTH - paddleWidth)/2;
     private int yPaddle = GAME_HEIGHT - paddleHeight;
-    private int ballDiameter = 20;
+    private int ballDiameter = 10;
     private int xBall = (GAME_WIDTH - ballDiameter)/2;
     private int yBall = (GAME_HEIGHT - ballDiameter)/2;
     private int dxBall = 2;
@@ -28,13 +28,14 @@ public class GamePanel extends JPanel implements ActionListener {
     private int brickRows = brickGenerator.nextInt(5) + 4;
     private int brickWidth = 50;
     private int brickHeight = 10;
-    private int brickSpace = 5;
-    private int bricksLeftSpace = (GAME_WIDTH - (brickWidth*brickColumns + brickSpace*(brickColumns - 1))) / 2;
-    private int bricksUpperSpace = 10;
+    private int gapBetweenBricks = 5;
+    private int leftEdgeToBricksGap = (GAME_WIDTH - (brickWidth*brickColumns + gapBetweenBricks *(brickColumns - 1))) / 2;
+    private int topEdgeToBricksGap = 10;
     private int bricksX[][] = new int[brickColumns][brickRows];
     private int bricksY[][] = new int[brickColumns][brickRows];
     private boolean isBrickHit[][] = new boolean[brickColumns][brickRows];
     private String gameState = "runs";
+    private boolean enableCheat = false;
 
     public GamePanel() {
         this.setBackground(Color.BLACK);
@@ -56,8 +57,12 @@ public class GamePanel extends JPanel implements ActionListener {
             if(e.getKeyCode() == KeyEvent.VK_RIGHT && xPaddle < (GAME_WIDTH - paddleWidth)) {
                 xPaddle = xPaddle + 10;
             }
-            if(gameState != "runs" && e.getKeyCode() == KeyEvent.VK_SPACE) {
+            if(!gameState.equals("runs") && e.getKeyCode() == KeyEvent.VK_SPACE) {
                 resetGame();
+            }
+            if(gameState.equals("runs") && e.getKeyCode() == KeyEvent.VK_A) {
+               enableCheat = true;
+                System.out.println("CHEAT ENABLED!");
             }
         }
     }
@@ -65,7 +70,7 @@ public class GamePanel extends JPanel implements ActionListener {
     @Override
     public void paint(Graphics g) {
         super.paint(g); //this will paint the background
-        if(gameState == "runs") {
+        if(gameState.equals("runs")) {
             drawPaddle(g);
             drawBall(g);
             drawBricks(g);
@@ -77,8 +82,8 @@ public class GamePanel extends JPanel implements ActionListener {
     private void spawnBricks() {
         for(int i = 0; i < brickColumns; i++) {
             for(int j = 0; j < brickRows; j++) {
-                bricksX[i][j] = i * (brickWidth + brickSpace) + bricksLeftSpace;
-                bricksY[i][j] = j * (brickHeight + brickSpace) + bricksUpperSpace;
+                bricksX[i][j] = i * (brickWidth + gapBetweenBricks) + leftEdgeToBricksGap;
+                bricksY[i][j] = j * (brickHeight + gapBetweenBricks) + topEdgeToBricksGap;
                 isBrickHit[i][j] = false;
             }
         }
@@ -96,10 +101,10 @@ public class GamePanel extends JPanel implements ActionListener {
 
     private void ballMovement () {
         if(xBall <= 0 || xBall > GAME_WIDTH - ballDiameter) {
-            dxBall = dxBall * -1;
+            dxBall = -dxBall;
         }
         if(yBall <= 0 || (yBall + ballDiameter) >= yPaddle && xBall > xPaddle && xBall < (xPaddle + paddleWidth)) {
-            dyBall = dyBall * -1;
+            dyBall = -dyBall;
         }
         xBall += dxBall;
         yBall += dyBall;
@@ -150,7 +155,7 @@ public class GamePanel extends JPanel implements ActionListener {
     }
 
     private void gameOver(Graphics g) {
-        Font font = new Font("Halveica", Font.BOLD, 40);
+        Font font = new Font(null, Font.BOLD, 40);
         FontMetrics metrics = getFontMetrics(font);
         g.setColor(Color.WHITE);
         g.setFont(font);
@@ -160,16 +165,20 @@ public class GamePanel extends JPanel implements ActionListener {
     private void resetGame() {
         spawnBricks();
         xPaddle = (GAME_WIDTH - paddleWidth)/2;
-        yPaddle = yPaddle = GAME_HEIGHT - paddleHeight;
+        yPaddle = GAME_HEIGHT - paddleHeight;
         xBall = (GAME_WIDTH - ballDiameter)/2;
         yBall = (GAME_HEIGHT - ballDiameter)/2;
         dxBall = 2;
         dyBall = -2;
+        enableCheat = false;
         gameState = "runs";
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        if(enableCheat) {
+            xPaddle = xBall - paddleWidth / 2;
+        }
         checkGameState();
         collisionWithBricks();
         ballMovement();
