@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.util.Random;
 
 public class GamePanel extends JPanel implements ActionListener {
@@ -32,11 +34,47 @@ public class GamePanel extends JPanel implements ActionListener {
     private int bricksX[][] = new int[brickColumns][brickRows];
     private int bricksY[][] = new int[brickColumns][brickRows];
     private boolean isBrickHit[][] = new boolean[brickColumns][brickRows];
+    private String gameState = "runs";
 
     public GamePanel() {
-        setBackground(Color.BLACK);
+        this.setBackground(Color.BLACK);
         setPreferredSize(new Dimension(GAME_WIDTH, GAME_HEIGHT));
 
+        spawnBricks();
+        timer = new Timer(10, this);
+        timer.start();
+        addKeyListener(new PaddleControl());
+        setFocusable(true);
+    }
+
+    public class PaddleControl extends KeyAdapter {
+        @Override
+        public void keyPressed(KeyEvent e) {
+            if(e.getKeyCode() == KeyEvent.VK_LEFT && xPaddle > 0) {
+                xPaddle = xPaddle - 10;
+            }
+            if(e.getKeyCode() == KeyEvent.VK_RIGHT && xPaddle < (GAME_WIDTH - paddleWidth)) {
+                xPaddle = xPaddle + 10;
+            }
+            if(gameState != "runs" && e.getKeyCode() == KeyEvent.VK_SPACE) {
+                resetGame();
+            }
+        }
+    }
+
+    @Override
+    public void paint(Graphics g) {
+        super.paint(g); //this will paint the background
+        if(gameState == "runs") {
+            drawPaddle(g);
+            drawBall(g);
+            drawBricks(g);
+        } else {
+            gameOver(g);
+        }
+    }
+
+    private void spawnBricks() {
         for(int i = 0; i < brickColumns; i++) {
             for(int j = 0; j < brickRows; j++) {
                 bricksX[i][j] = i * (brickWidth + brickSpace) + bricksLeftSpace;
@@ -44,23 +82,11 @@ public class GamePanel extends JPanel implements ActionListener {
                 isBrickHit[i][j] = false;
             }
         }
-        timer = new Timer(10, this);
-        timer.start();
-    }
-
-    @Override
-    public void paint(Graphics g) {
-        super.paint(g); //this will paint the background
-        drawPaddle(g);
-        drawBall(g);
-        drawBricks(g);
     }
 
     private void drawPaddle (Graphics g) {
         g.setColor(Color.RED);
         g.fillRect(xPaddle, yPaddle, paddleWidth, paddleHeight);
-        g.setColor(Color.WHITE);
-        g.drawRect(xPaddle, yPaddle, paddleWidth, paddleHeight);
     }
 
     private void drawBall (Graphics g) {
@@ -72,7 +98,7 @@ public class GamePanel extends JPanel implements ActionListener {
         if(xBall <= 0 || xBall > GAME_WIDTH - ballDiameter) {
             dxBall = dxBall * -1;
         }
-        if(yBall <= 0) {
+        if(yBall <= 0 || (yBall + ballDiameter) >= yPaddle && xBall > xPaddle && xBall < (xPaddle + paddleWidth)) {
             dyBall = dyBall * -1;
         }
         xBall += dxBall;
@@ -90,8 +116,62 @@ public class GamePanel extends JPanel implements ActionListener {
         }
     }
 
+    private void collisionWithBricks () {
+        for(int i = 0; i < brickColumns; i++) {
+            for (int j = 0; j < brickRows; j++) {
+                if(!isBrickHit[i][j]) {
+                    if(xBall > bricksX[i][j]
+                            && xBall < bricksX[i][j] + brickWidth
+                            && yBall + ballDiameter > bricksY[i][j]
+                            && yBall < bricksY[i][j] + brickHeight) {
+                        dyBall = -dyBall;
+                        isBrickHit[i][j] = true;
+                    } else if(yBall > bricksY[i][j]
+                            && yBall < bricksY[i][j] + brickHeight
+                            && xBall + ballDiameter > bricksX[i][j]
+                            && xBall < bricksX[i][j] + brickWidth) {
+                        dxBall = -dxBall;
+                        isBrickHit[i][j] = true;
+                    }
+                }
+            }
+        }
+    }
+
+    private void checkGameState () {
+        if(yBall > GAME_HEIGHT) gameState = "YOU LOST";
+        int bricksLeft = 0;
+        for(int i = 0; i < brickColumns; i++) {
+            for (int j = 0; j < brickRows; j++) {
+                if(!isBrickHit[i][j]) bricksLeft++;
+            }
+        }
+        if(bricksLeft == 0) gameState = "YOU WON";
+    }
+
+    private void gameOver(Graphics g) {
+        Font font = new Font("Halveica", Font.BOLD, 40);
+        FontMetrics metrics = getFontMetrics(font);
+        g.setColor(Color.WHITE);
+        g.setFont(font);
+        g.drawString(gameState, (GAME_WIDTH - metrics.stringWidth(gameState)) / 2, GAME_HEIGHT / 2);
+    }
+
+    private void resetGame() {
+        spawnBricks();
+        xPaddle = (GAME_WIDTH - paddleWidth)/2;
+        yPaddle = yPaddle = GAME_HEIGHT - paddleHeight;
+        xBall = (GAME_WIDTH - ballDiameter)/2;
+        yBall = (GAME_HEIGHT - ballDiameter)/2;
+        dxBall = 2;
+        dyBall = -2;
+        gameState = "runs";
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
+        checkGameState();
+        collisionWithBricks();
         ballMovement();
         repaint();
     }
